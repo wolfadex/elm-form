@@ -14,6 +14,7 @@ module Form exposing
     , hiddenField, hiddenKind
     , dynamic
     , Msg, init, update
+    , setField
     , Model, FormState, FieldState
     , ServerResponse
     , mapMsg, toResult
@@ -230,6 +231,7 @@ through hidden fields.
 in the user's workflow to show validation errors.
 
 @docs Msg, init, update
+@docs setField
 
 
 ### Model
@@ -1624,6 +1626,37 @@ update formMsg formModel =
             , maybeMsg
                 |> Maybe.map (\userMsg -> Task.succeed userMsg |> Task.perform identity)
                 |> Maybe.withDefault Cmd.none
+            )
+
+
+{-| Sometimes you get values asynchronously from the normal form flow
+and need to insert them into the form state.
+-}
+setField :
+    { name : String
+    , value : String
+    , formId : String
+    }
+    -> Model
+    -> Model
+setField cfg formModel =
+    formModel
+        |> Dict.update cfg.formId
+            (\previousValue_ ->
+                let
+                    previousValue : FormState
+                    previousValue =
+                        previousValue_
+                            |> Maybe.withDefault initSingle
+                in
+                previousValue
+                    |> updateForm
+                        { value = cfg.value
+                        , formId = cfg.formId
+                        , name = cfg.name
+                        , event = InputEvent cfg.value
+                        }
+                    |> Just
             )
 
 
